@@ -42,16 +42,23 @@ Future<ApiResponse<LandListResponse>> loadLands({
     @Body() required ProcessedLandData landData,
   });
 
-  @PUT('/api/document-processing/update/{landId}')
+  @PUT('/api/document-processing/update-coordinates/{landId}')
   Future<ApiResponse<ProcessedLandData>> updateLand({
     @Path('landId') required String landId,
     @Body() required ProcessedLandData landData,
   });
 
 
-  @POST('/api/document-processing/store/{userId}')
+  @POST('/api/document-processing/store-unapproved-siteplan/{userId}')
   Future<ApiResponse<ProcessedLandData>> saveSitePlanData({
     @Path('userId') required String userId,
+    @Body() required ProcessedLandData landData,
+  });
+
+
+  @PUT('/api/document-processing/update-siteplan/{landId}')
+  Future<ApiResponse<ProcessedLandData>> updateSitePlan({
+    @Path('landId') required String landId,
     @Body() required ProcessedLandData landData,
   });
 
@@ -68,8 +75,13 @@ Future<ApiResponse<LandListResponse>> loadLands({
     @Path('landId') required String landId,
   });
 
-  @DELETE('/api/lands/{landId}')
-  Future<ApiResponse<EmptyResponse>> deleteLand({
+  @DELETE('/api/document-processing/delete-unapproved-document/{landId}')
+  Future<ApiResponse<EmptyResponse>> deleteUnApproved({
+    @Path('landId') required String landId,
+  });
+
+  @DELETE('/api/document-processing/delete-document/{landId}')
+  Future<ApiResponse<EmptyResponse>> deleteSitePlan({
     @Path('landId') required String landId,
   });
 

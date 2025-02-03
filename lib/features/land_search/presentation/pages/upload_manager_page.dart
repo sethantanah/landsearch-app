@@ -1,6 +1,6 @@
 // lib/features/land_search/presentation/pages/explorer_dashboard.dart
 import 'dart:ui';
-
+import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../controllers/controllers.dart';
 import '../../data/models/app_status.dart';
 import '../../data/models/site_plan_model.dart';
+import '../widgets/custom_map.dart';
 import '../widgets/edit_siteplan_data.dart';
 import '../widgets/land_details_card.dart';
 import '../widgets/upload_siteplan.dart';
@@ -61,7 +62,7 @@ class _UploadManagerState extends State<UploadManager> {
                             });
                       },
                       icon: const Icon(Icons.upload,
-                          size: 18), // Icon for the button
+                          size: 18, color: Colors.white), // Icon for the button
                       label: const Text(
                         "Upload Documents",
                         style: TextStyle(
@@ -148,8 +149,11 @@ class _UploadManagerState extends State<UploadManager> {
                                           return const FileUploadScreen();
                                         });
                                   },
-                                  icon: const Icon(Icons.upload,
-                                      size: 18), // Icon for the button
+                                  icon: const Icon(
+                                    Icons.upload,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ), // Icon for the button
                                   label: const Text(
                                     "Upload Documents",
                                     style: TextStyle(
@@ -184,74 +188,107 @@ class _UploadManagerState extends State<UploadManager> {
                                           .selectedUnApprovedSitePlan.value,
                                       showEditButton: false,
                                       onSave: (data) {},
+                                      onUpdate:
+                                          (ProcessedLandData update) async {
+                                        _landSearchController
+                                            .updateSitePlanCoordinates(update);
+                                      },
+                                      onDelete: (ProcessedLandData data) async {
+                                        await _landSearchController
+                                            .deleteUnapprovedSitePlan(data);
+                                      },
                                     ),
                                   )),
                               Expanded(
-                                child: Stack(
-                                  children: [
-                                    GoogleMap(
-                                      initialCameraPosition:
-                                          _landSearchController
-                                              .initialCameraPosition2.value!,
-                                      onMapCreated:
-                                          (GoogleMapController controller) {
-                                        setState(() {
-                                          mapController = controller;
-                                          isMapReady = true;
-                                        });
-                                      },
-                                      myLocationEnabled: false,
-                                      myLocationButtonEnabled: false,
-                                      zoomControlsEnabled: false,
-                                      mapType: MapType.normal,
-                                      markers: _buildMarkersFromSearchResults(
-                                          _landSearchController),
-                                      polygons: _buildPolygonsFromSearchResults(
-                                          _landSearchController),
-                                    ),
-                                    if (!isMapReady)
-                                      const Center(
-                                        child: CircularProgressIndicator(
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-
-                                    // Enhanced Map Controls
-                                    Positioned(
-                                      right: 16,
-                                      bottom: 16,
-                                      child: Column(
-                                        children: [
-                                          _buildMapControl(
-                                            icon: Icons.add,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                                    CameraUpdate.zoomIn()),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          _buildMapControl(
-                                            icon: Icons.remove,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                                    CameraUpdate.zoomOut()),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          _buildMapControl(
-                                            icon: Icons.my_location,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                              CameraUpdate.newCameraPosition(
-                                                  _landSearchController
-                                                      .initialCameraPosition2
-                                                      .value!),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                child: CoordinatesMap(
+                                  coordinates: [
+                                    _landSearchController
+                                        .selectedUnApprovedSitePlan
+                                        .value!
+                                        .pointList
+                                        .map((point) => latlong2.LatLng(
+                                            point.latitude, point.longitude))
+                                        .toList()
                                   ],
+                                  initialZoom: 5.0,
+                                  borderRadius: 0,
+                                  mapHeight:
+                                      MediaQuery.of(context).size.height *
+                                          0.796,
+                                  onPolygonTap: (index) {
+                                    _landSearchController.setSelectedSitePlan(
+                                        _landSearchController
+                                            .unApprovedSitePlans[index],
+                                        refresh: false);
+                                  },
                                 ),
                               ),
+                              // Expanded(
+                              //   child: Stack(
+                              //     children: [
+                              //       GoogleMap(
+                              //         initialCameraPosition:
+                              //             _landSearchController
+                              //                 .initialCameraPosition2.value!,
+                              //         onMapCreated:
+                              //             (GoogleMapController controller) {
+                              //           setState(() {
+                              //             mapController = controller;
+                              //             isMapReady = true;
+                              //           });
+                              //         },
+                              //         myLocationEnabled: false,
+                              //         myLocationButtonEnabled: false,
+                              //         zoomControlsEnabled: false,
+                              //         mapType: MapType.normal,
+                              //         markers: _buildMarkersFromSearchResults(
+                              //             _landSearchController),
+                              //         polygons: _buildPolygonsFromSearchResults(
+                              //             _landSearchController),
+                              //       ),
+                              //       if (!isMapReady)
+                              //         const Center(
+                              //           child: CircularProgressIndicator(
+                              //             color: AppColors.primary,
+                              //           ),
+                              //         ),
+                              //
+                              //       // Enhanced Map Controls
+                              //       Positioned(
+                              //         right: 16,
+                              //         bottom: 16,
+                              //         child: Column(
+                              //           children: [
+                              //             _buildMapControl(
+                              //               icon: Icons.add,
+                              //               onTap: () =>
+                              //                   mapController?.animateCamera(
+                              //                       CameraUpdate.zoomIn()),
+                              //             ),
+                              //             const SizedBox(height: 8),
+                              //             _buildMapControl(
+                              //               icon: Icons.remove,
+                              //               onTap: () =>
+                              //                   mapController?.animateCamera(
+                              //                       CameraUpdate.zoomOut()),
+                              //             ),
+                              //             const SizedBox(height: 8),
+                              //             _buildMapControl(
+                              //               icon: Icons.my_location,
+                              //               onTap: () =>
+                              //                   mapController?.animateCamera(
+                              //                 CameraUpdate.newCameraPosition(
+                              //                     _landSearchController
+                              //                         .initialCameraPosition2
+                              //                         .value!),
+                              //               ),
+                              //             ),
+                              //           ],
+                              //         ),
+                              //       ),
+                              //     ],
+                              //   ),
+                              // ),
                             ],
                           );
                         default:
@@ -334,14 +371,27 @@ class _UploadManagerState extends State<UploadManager> {
                                         onSave:
                                             (ProcessedLandData update) async {
                                           _landSearchController
-                                              .updateSitePlan(update);
+                                              .updateSitePlanCoordinatesGeneral(
+                                                  update);
+                                        },
+                                        onUpdate:
+                                            (ProcessedLandData update) async {
+                                          _landSearchController
+                                              .updateSitePlanCoordinates(
+                                                  update);
+                                        },
+                                        onDelete:
+                                            (ProcessedLandData data) async {
+                                          await _landSearchController
+                                              .deleteUnapprovedSitePlan(data);
                                         },
                                       );
                                     });
                               }
                             },
                             icon: const Icon(Icons.edit_outlined,
-                                size: 18), // Icon for the button
+                                size: 18,
+                                color: Colors.white), // Icon for the button
                             label: const Text(
                               "Modify",
                               style: TextStyle(
@@ -406,7 +456,8 @@ class _UploadManagerState extends State<UploadManager> {
                               }
                             },
                             icon: const Icon(Icons.save,
-                                size: 18), // Icon for the button
+                                size: 18,
+                                color: Colors.white), // Icon for the button
                             label: const Text(
                               "Approve",
                               style: TextStyle(

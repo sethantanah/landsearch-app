@@ -1,7 +1,14 @@
 // lib/features/land_search/presentation/pages/plot_form.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:landsearch_platform/features/land_search/presentation/widgets/map_view.dart';
+import 'package:latlong2/latlong.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../controllers/controllers.dart';
 import '../../data/models/site_plan_model.dart';
+import 'custom_map.dart';
 
 class PlotForm extends StatefulWidget {
   final ProcessedLandData landData;
@@ -9,6 +16,8 @@ class PlotForm extends StatefulWidget {
   late String? actionText = "Save Changes";
   late bool? validate = true;
   final Function(ProcessedLandData) onSave;
+  final Function(ProcessedLandData) onUpdate;
+  final Function(ProcessedLandData)? onDelete;
 
   PlotForm(
       {super.key,
@@ -16,7 +25,9 @@ class PlotForm extends StatefulWidget {
       required this.onSave,
       this.validate,
       this.title,
-      this.actionText});
+      this.actionText,
+      required this.onUpdate,
+      this.onDelete});
 
   @override
   State<PlotForm> createState() => _PlotFormState();
@@ -24,6 +35,9 @@ class PlotForm extends StatefulWidget {
 
 class _PlotFormState extends State<PlotForm>
     with SingleTickerProviderStateMixin {
+  final LandSearchController _landSearchController = Get.find();
+  final MapController myMapController = MapController();
+
   late ProcessedLandData _landData;
   final _formKey = GlobalKey<FormState>();
   late TabController _tabController;
@@ -33,11 +47,13 @@ class _PlotFormState extends State<PlotForm>
   bool isSurveyPointsExpanded = false;
   bool isBoundaryPointsExpanded = false;
 
+  bool refreshMap = false;
+
   @override
   void initState() {
     super.initState();
     _landData = widget.landData;
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -48,7 +64,7 @@ class _PlotFormState extends State<PlotForm>
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController.index == 3) {
+    if (_tabController.index == 2) {
       // if(widget.validate == false){
       //   setState(() {
       //     _landData.id = "search-site-plan";
@@ -56,6 +72,7 @@ class _PlotFormState extends State<PlotForm>
       // }
       _formKey.currentState!.save();
     }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -84,6 +101,30 @@ class _PlotFormState extends State<PlotForm>
               ),
             ),
           ),
+
+         if(widget.validate == true)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 20, 0),
+            child: ElevatedButton(
+              onPressed: () {
+                _deleteSitePlan(context);
+              },
+              style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0),
+              child: const Text(
+                "Delete",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent),
+              ),
+            ),
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -96,10 +137,10 @@ class _PlotFormState extends State<PlotForm>
               icon: Icon(Icons.map_outlined),
               text: 'Survey Points',
             ),
-            Tab(
-              icon: Icon(Icons.area_chart_outlined),
-              text: 'Boundary',
-            ),
+            // Tab(
+            //   icon: Icon(Icons.area_chart_outlined),
+            //   text: 'Boundary',
+            // ),
             Tab(
               icon: Icon(Icons.preview_outlined),
               text: 'Preview',
@@ -151,20 +192,20 @@ class _PlotFormState extends State<PlotForm>
                       ],
                     ),
                   ),
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        _buildExpandableSection(
-                          title: 'Boundary Points',
-                          isExpanded: true,
-                          onExpansionChanged: (value) =>
-                              setState(() => isBoundaryPointsExpanded = value),
-                          child: _buildBoundaryPointsSection(),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // SingleChildScrollView(
+                  //   padding: const EdgeInsets.all(16),
+                  //   child: Column(
+                  //     children: [
+                  //       _buildExpandableSection(
+                  //         title: 'Boundary Points',
+                  //         isExpanded: true,
+                  //         onExpansionChanged: (value) =>
+                  //             setState(() => isBoundaryPointsExpanded = value),
+                  //         child: _buildBoundaryPointsSection(),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                   Expanded(child: MapPreview(data: _landData))
                 ],
               ),
@@ -404,13 +445,6 @@ class _PlotFormState extends State<PlotForm>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // const Text(
-            //   'Points',
-            //   style: TextStyle(
-            //     fontSize: 16,
-            //     fontWeight: FontWeight.w500,
-            //   ),
-            // ),
             TextButton.icon(
               icon: const Icon(Icons.add),
               label: const Text('Add Point'),
@@ -418,24 +452,86 @@ class _PlotFormState extends State<PlotForm>
             ),
           ],
         ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _landData.surveyPoints.length,
-          itemBuilder: (context, index) => _buildSurveyPointCard(index),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, // Number of columns
-            mainAxisSpacing: 16.0,
-            crossAxisSpacing: 16.0,
-            childAspectRatio: 2,
-          ),
-        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              // Ensures GridView gets proper constraints
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _landData.surveyPoints.length,
+                itemBuilder: (context, index) => _buildSurveyPointCard(index),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16.0,
+                  crossAxisSpacing: 16.0,
+                  childAspectRatio: 2,
+                ),
+              ),
+            ),
+            //_formKey.currentState!.save();
+            Stack(children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.5,
+                width: MediaQuery.of(context).size.width * 0.4,
+                child: CoordinatesMap(
+                  coordinates: [
+                    _landData.pointList
+                        .toList()
+                        .map((point) => LatLng(point.latitude, point.longitude))
+                        .toList()
+                  ],
+                  initialZoom: 17.0,
+                  borderRadius: 16,
+                ),
+              ),
+              Positioned(
+                  right: 16,
+                  top: 16,
+                  child: Column(
+                    children: [
+                      Material(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        elevation: 4,
+                        child: InkWell(
+                          onTap: () {
+                            _refreshMap();
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: refreshMap == false
+                                ? const Icon(
+                                    Icons.refresh,
+                                    size: 20,
+                                    color: AppColors.primary,
+                                  )
+                                : const CircularProgressIndicator(
+                                    color: AppColors.primary,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ))
+            ])
+          ],
+        )
       ],
     );
   }
 
   Widget _buildSurveyPointCard(int index) {
     final point = _landData.surveyPoints[index];
+    final TextEditingController xtextController =
+        TextEditingController.fromValue(
+            TextEditingValue(text: point.originalCoords?.x.toString() ?? '0'));
+    final TextEditingController ytextController =
+        TextEditingController.fromValue(
+            TextEditingValue(text: point.originalCoords?.y.toString() ?? '0'));
     return Card(
       color: Colors.white,
       elevation: 0,
@@ -477,6 +573,7 @@ class _PlotFormState extends State<PlotForm>
                 Expanded(
                   child: _buildFormField(
                     label: '',
+                    textController: xtextController,
                     value: point.originalCoords?.x.toString(),
                     keyboardType: TextInputType.number,
                     onChanged: (value) =>
@@ -489,24 +586,31 @@ class _PlotFormState extends State<PlotForm>
                     label: '',
                     value: point.originalCoords?.y.toString(),
                     keyboardType: TextInputType.number,
+                    textController: ytextController,
                     onChanged: (value) =>
                         point.originalCoords?.y = double.tryParse(value) ?? 0,
                   ),
                 ),
                 const SizedBox(width: 5),
+                IconButton(
+                  onPressed: () {
+                    var coordsAtIndex = _landData.surveyPoints[index];
+                    final lat = coordsAtIndex.originalCoords?.x;
+                    final lon = coordsAtIndex.originalCoords?.y;
 
-                IconButton(onPressed: (){
-                  var coordsAtIndex = _landData.surveyPoints[index];
-                  final lat = coordsAtIndex.originalCoords?.x;
-                  final lon = coordsAtIndex.originalCoords?.y;
-
-                  coordsAtIndex.originalCoords?.y = lat!;
-                  coordsAtIndex.originalCoords?.x = lon!;
-
-                  setState(() {
-                    _landData.surveyPoints[index] = coordsAtIndex;
-                  });
-                },  icon: const Icon(Icons.swap_horizontal_circle_outlined),)
+                    setState(() {
+                      point.originalCoords?.x = lon!;
+                      point.originalCoords?.y = lat!;
+                      xtextController.value =
+                          TextEditingValue(text: lon.toString());
+                      ytextController.value =
+                          TextEditingValue(text: lat.toString());
+                      _landData.surveyPoints[index].originalCoords?.x = lon!;
+                      _landData.surveyPoints[index].originalCoords?.y = lat!;
+                    });
+                  },
+                  icon: const Icon(Icons.swap_horizontal_circle_outlined),
+                )
               ],
             ),
           ],
@@ -622,6 +726,7 @@ class _PlotFormState extends State<PlotForm>
     required String label,
     required String? value,
     required Function(String) onChanged,
+    TextEditingController? textController,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     Widget? suffixIcon,
@@ -632,7 +737,9 @@ class _PlotFormState extends State<PlotForm>
     return Padding(
         padding: const EdgeInsets.only(bottom: 5),
         child: TextFormField(
-          initialValue: value,
+          key: Key("$label$value"),
+          controller: textController,
+          initialValue: textController == null ? value : null,
           style: const TextStyle(
             fontSize: 16,
             color: Colors.black87,
@@ -802,5 +909,52 @@ class _PlotFormState extends State<PlotForm>
         ),
       );
     }
+  }
+
+  Future<void> _deleteSitePlan(BuildContext parentContext) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          color: Colors.redAccent,
+        ),
+      ),
+    );
+
+    // Call the save callback
+    await widget.onDelete!(_landData);
+
+    // Hide loading indicator
+    if (mounted) {
+      Navigator.pop(context);
+      Navigator.pop(context);
+      Navigator.pop(parentContext);
+    }
+  }
+
+  Future<void> _refreshMap() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      setState(() {
+        refreshMap = true;
+      });
+
+      final results =
+          await _landSearchController.reComputeCoordinates(_landData);
+
+      if (results != null) {
+        setState(() {
+          _landData = results;
+          refreshMap = false;
+        });
+      } else {
+        setState(() {
+          refreshMap = false;
+        });
+      }
+    } else {}
   }
 }

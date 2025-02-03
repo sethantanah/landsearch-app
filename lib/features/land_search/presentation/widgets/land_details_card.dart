@@ -7,12 +7,16 @@ class LandDetailsInfoWidget extends StatelessWidget {
   final ProcessedLandData? data;
   final bool showEditButton;
   final Function(ProcessedLandData) onSave;
+  final Function(ProcessedLandData) onUpdate;
+  final Function(ProcessedLandData)? onDelete;
 
   const LandDetailsInfoWidget({
     super.key,
     required this.data,
     required this.showEditButton,
     required this.onSave,
+    required this.onUpdate,
+    this.onDelete,
   });
 
   @override
@@ -34,7 +38,6 @@ class LandDetailsInfoWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-
             data?.pointList.length == 1
                 ? Container(
                     margin: const EdgeInsets.symmetric(
@@ -56,21 +59,23 @@ class LandDetailsInfoWidget extends StatelessWidget {
                           ? "${data?.plotInfo.plotNumber}"
                           : ""),
                 ),
-
-                if(showEditButton)
-                     IconButton(onPressed: (){
-
-                       showDialog(
-                           context: context,
-                           builder: (BuildContext context) {
-                             return PlotForm(
-                               actionText: "Save Document",
-                               validate: true,
-                               landData: data!,
-                               onSave:onSave,
-                             );
-                           });
-                     }, icon: const Icon(Icons.edit_outlined)),
+                if (showEditButton)
+                  IconButton(
+                      onPressed: () {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return PlotForm(
+                                actionText: "Save Document",
+                                validate: true,
+                                landData: data!,
+                                onSave: onSave,
+                                onUpdate: onUpdate,
+                                onDelete: onDelete,
+                              );
+                            });
+                      },
+                      icon: const Icon(Icons.edit_outlined)),
               ],
             ),
             _buildDivider(),

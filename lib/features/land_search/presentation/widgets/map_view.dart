@@ -4,21 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:landsearch_platform/features/land_search/data/models/site_plan_model.dart';
-
+import 'package:latlong2/latlong.dart' as latlong2;
 import '../../../../core/theme/app_colors.dart';
 import '../../controllers/controllers.dart';
-import '../../data/models/app_status.dart';
+import 'custom_map.dart';
 import 'land_details_card.dart';
 
 class MapPreview extends StatefulWidget {
   late ProcessedLandData? data;
   MapPreview({super.key, required this.data});
 
-
   @override
   State<MapPreview> createState() => _MapViewState();
 }
-
 
 class _MapViewState extends State<MapPreview> {
   final LandSearchController _landSearchController = Get.find();
@@ -27,12 +25,11 @@ class _MapViewState extends State<MapPreview> {
   BitmapDescriptor? dotMarker;
 
   reloadCoordinates() async {
-    if(widget.data != null){
+    if (widget.data != null) {
       final results =
-          await _landSearchController
-          .reComputeCoordinates(widget.data!);
+          await _landSearchController.reComputeCoordinates(widget.data!);
 
-      if(results != null){
+      if (results != null) {
         _landSearchController.uploadedSitePlan.value = results;
         setState(() {
           widget.data = results;
@@ -67,36 +64,58 @@ class _MapViewState extends State<MapPreview> {
                       data: _landSearchController.uploadedSitePlan.value,
                       showEditButton: false,
                       onSave: (data) {},
+                      onUpdate: (ProcessedLandData update) async {
+                        _landSearchController.updateSitePlanCoordinates(update);
+                      },
+                      onDelete: (ProcessedLandData update) async {
+                        _landSearchController.deleteSitePlan(update);
+                      },
                     ),
                   )),
-              Expanded(
-                child: Stack(
-                  children: [
-                    GoogleMap(
-                      initialCameraPosition:
-                          _landSearchController.initialCameraPosition4.value!,
-                      onMapCreated: (GoogleMapController controller) {
-                        setState(() {
-                          mapController = controller;
-                          isMapReady = true;
-                        });
-                      },
-                      myLocationEnabled: false,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                      mapType: MapType.normal,
-                      markers:
-                          _buildMarkersFromSearchResults(_landSearchController),
-                      polygons: _buildPolygonsFromSearchResults(
-                          _landSearchController),
-                    ),
-                    if (!isMapReady)
-                      const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                  ],
+
+
+                Expanded(
+                  child: CoordinatesMap(
+                    coordinates: [
+                      widget.data!.pointList
+                          .map((point) =>
+                              latlong2.LatLng(point.latitude, point.longitude))
+                          .toList()
+                    ],
+                    initialZoom: 17.0,
+                    borderRadius: 0,
+                    mapHeight: MediaQuery.of(context).size.height * 0.86,
+                  ),
                 ),
-              ),
+
+              // Expanded(
+              //   child: Stack(
+              //     children: [
+              //       GoogleMap(
+              //         initialCameraPosition:
+              //             _landSearchController.initialCameraPosition4.value!,
+              //         onMapCreated: (GoogleMapController controller) {
+              //           setState(() {
+              //             mapController = controller;
+              //             isMapReady = true;
+              //           });
+              //         },
+              //         myLocationEnabled: false,
+              //         myLocationButtonEnabled: false,
+              //         zoomControlsEnabled: false,
+              //         mapType: MapType.normal,
+              //         markers:
+              //             _buildMarkersFromSearchResults(_landSearchController),
+              //         polygons: _buildPolygonsFromSearchResults(
+              //             _landSearchController),
+              //       ),
+              //       if (!isMapReady)
+              //         const Center(
+              //           child: CircularProgressIndicator(),
+              //         ),
+              //     ],
+              //   ),
+              // ),
             ],
           );
         default:

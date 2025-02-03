@@ -4,13 +4,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:landsearch_platform/features/land_search/presentation/pages/upload_manager_page.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../controllers/controllers.dart';
-import '../../data/models/site_plan_model.dart';
-import '../widgets/land_details_card.dart';
-import '../widgets/region_card.dart';
 import 'document_search_page.dart';
 import 'explorer_dashboard.dart';
 

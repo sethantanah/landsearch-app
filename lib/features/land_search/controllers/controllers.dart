@@ -210,11 +210,11 @@ class LandSearchController extends GetxController {
     }
   }
 
-  Future<ProcessedLandData?> updateSitePlanGeneral(
+  Future<ProcessedLandData?> updateSitePlanCoordinatesGeneral(
       ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
-      final results = await _repository.updateLand('12344', data);
+      final results = await _repository.updateSitePlanCoordinates('12344', data);
       final index = uploadedSitePlans.indexWhere((plan) => plan.id == data.id);
       searchResults[index] = results;
       uploadedSitePlans[index] = results;
@@ -227,26 +227,29 @@ class LandSearchController extends GetxController {
     return null;
   }
 
-  Future<void> updateSitePlan(ProcessedLandData data) async {
+  Future<ProcessedLandData?> updateSitePlanCoordinates(ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
-      final results = await _repository.updateLand('12344', data);
+      final results = await _repository.updateSitePlanCoordinates('12344', data);
       final index =
           unApprovedSitePlans.indexWhere((plan) => plan.id == data.id);
       unApprovedSitePlans[index] = results;
       setSelectedUnApprovedSitePlan(results, index: index);
       updateStatus.value = LandSearchUpdateStatus.updateComplete;
+      return results;
     } catch (error) {
       updateStatus.value = LandSearchUpdateStatus.updateError;
       print(error);
     }
+
+    return null;
   }
 
   Future<ProcessedLandData?> reComputeCoordinates(
       ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
-      final results = await _repository.updateLand('12344', data);
+      final results = await _repository.updateSitePlanCoordinates('12344', data);
       return results;
     } catch (error) {
       print(error);
@@ -306,6 +309,84 @@ class LandSearchController extends GetxController {
       updateStatus.value = LandSearchUpdateStatus.updateError;
       print(error);
     }
+  }
+
+
+
+
+  Future<ProcessedLandData?> updateSitePlan(
+      ProcessedLandData data) async {
+    try {
+      updateStatus.value = LandSearchUpdateStatus.updating;
+      final results = await _repository.updateSitePlan(data.id!, data);
+      final index = uploadedSitePlans.indexWhere((plan) => plan.id == data.id);
+      searchResults[index] = results;
+      uploadedSitePlans[index] = results;
+      searchResultsUnfiltered[index] = results;
+      setSelectedSitePlan(results);
+      updateStatus.value = LandSearchUpdateStatus.success;
+      return results;
+    } catch (error) {
+      print(error);
+    }
+    return null;
+  }
+
+
+
+  Future<void> deleteSitePlan(
+      ProcessedLandData data) async {
+    try {
+      updateStatus.value = LandSearchUpdateStatus.updating;
+      await _repository.deleteSitePlan(data);
+      final index = uploadedSitePlans.indexWhere((plan) => plan.id == data.id);
+      searchResults.removeAt(index);
+      uploadedSitePlans.removeAt(index);
+      searchResultsUnfiltered.removeAt(index);
+      // setSelectedSitePlan(results);
+      updateStatus.value = LandSearchUpdateStatus.updateComplete;
+    } catch (error) {
+      print(error);
+    }
+    return null;
+  }
+
+  Future<void> deleteUnapprovedSitePlan(
+      ProcessedLandData data) async {
+    try {
+      updateStatus.value = LandSearchUpdateStatus.updating;
+      await _repository.deleteUnapprovedSitePlan(data);
+      final index =
+      unApprovedSitePlans.indexWhere((plan) => plan.id == data.id);
+      unApprovedSitePlans.removeAt(index);
+      // setSelectedUnApprovedSitePlan(results, index: index);
+      updateStatus.value = LandSearchUpdateStatus.updateComplete;
+    } catch (error) {
+      print(error);
+    }
+    return null;
+  }
+
+  CameraPosition getCenterPoints(List<ProcessedLandData> data) {
+    List<List<double>> allPoints = [];
+    for (var land in data) {
+      // Check if point_list exists and is not empty
+      if (land.pointList.isNotEmpty) {
+        allPoints.addAll(
+            land.pointList.map((point) => [point.latitude, point.longitude]));
+      }
+    }
+
+    double centerLat =
+        allPoints.map((p) => p[0]).reduce((a, b) => a + b) / allPoints.length;
+    double centerLon =
+        allPoints.map((p) => p[1]).reduce((a, b) => a + b) / allPoints.length;
+    _logger.i([centerLon, centerLat]);
+
+    return CameraPosition(
+      target: LatLng(centerLat, centerLon),
+      zoom: 15,
+    );
   }
 
   Future<void> computeCenterPoints(List<ProcessedLandData> data,
@@ -429,7 +510,7 @@ class LandSearchController extends GetxController {
             unApprovedSitePlans[selectedUnApprovedSitePlanIndex.value];
         _computeCenterPoints([selectedUnApprovedSitePlan.value!],
             whichMap: "upload");
-        refreshMap();
+        // refreshMap();
       }
     } else {
       if (documentSearchResults.isNotEmpty &
@@ -441,7 +522,7 @@ class LandSearchController extends GetxController {
             documentSearchResults[selectedMatchPlansIndex.value];
         _computeCenterPoints([selectedMatchingSitePlan.value!],
             whichMap: "search");
-        refreshMap(which: "search");
+        // refreshMap(which: "search");
       }
     }
   }
@@ -457,7 +538,7 @@ class LandSearchController extends GetxController {
             unApprovedSitePlans[selectedUnApprovedSitePlanIndex.value];
         _computeCenterPoints([selectedUnApprovedSitePlan.value!],
             whichMap: "upload");
-        refreshMap();
+        // refreshMap();
       }
     } else {
       if (documentSearchResults.isNotEmpty &
@@ -468,7 +549,7 @@ class LandSearchController extends GetxController {
             documentSearchResults[selectedMatchPlansIndex.value];
         _computeCenterPoints([selectedMatchingSitePlan.value!],
             whichMap: "search");
-        refreshMap(which: "search");
+        // refreshMap(which: "search");
       }
     }
   }

@@ -8,8 +8,6 @@ import 'package:landsearch_platform/features/land_search/data/models/site_plan_m
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:injectable/injectable.dart';
-import 'package:retrofit/retrofit.dart';
-
 part 'api_endpoints.g.dart';
 
 /// Custom exception for land API related errors
@@ -413,7 +411,7 @@ class LandApiService {
     }
   }
 
-  Future<ProcessedLandData> updateSitePlan(
+  Future<ProcessedLandData> updateSitePlanCoordinates(
       ProcessedLandData landData, String landId) async {
     try {
       if (!await _hasInternetConnection()) {
@@ -474,6 +472,105 @@ class LandApiService {
       rethrow;
     } catch (e, stackTrace) {
       _handleError(e, stackTrace, 'Unexpected error save land data');
+      rethrow;
+    }
+  }
+
+
+  Future<ProcessedLandData> updateSitePlan(
+      ProcessedLandData landData) async {
+    try {
+      if (!await _hasInternetConnection()) {
+        throw LandApiException(
+          message: 'No internet connection',
+          code: 'NO_INTERNET',
+        );
+      }
+
+      _logger.i('updating land data');
+      final response =
+      await _api.updateSitePlan(landId: landData.id!, landData: landData);
+
+      if (!response.success) {
+        throw LandApiException(
+          message: response.message ?? 'Failed to update land data',
+          code: response.message,
+        );
+      }
+
+      _logger.d('Land data updated successfully');
+      return response.data;
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error update land data');
+      rethrow;
+    } catch (e, stackTrace) {
+      _handleError(e, stackTrace, 'Unexpected error update land data');
+      rethrow;
+    }
+  }
+
+
+
+
+  Future<void> deleteSitePlan(
+      ProcessedLandData landData) async {
+    try {
+      if (!await _hasInternetConnection()) {
+        throw LandApiException(
+          message: 'No internet connection',
+          code: 'NO_INTERNET',
+        );
+      }
+
+      _logger.i('deleting land data');
+      final response =
+      await _api.deleteSitePlan(landId: landData.id!);
+
+      if (!response.success) {
+        throw LandApiException(
+          message: response.message ?? 'Failed to delete land data',
+          code: response.message,
+        );
+      }
+
+      _logger.d('Land data deleted successfully');
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error deleting land data');
+      rethrow;
+    } catch (e, stackTrace) {
+      _handleError(e, stackTrace, 'Unexpected error deleting land data');
+      rethrow;
+    }
+  }
+
+
+  Future<void> deleteUnapprovedSitePlan(
+      ProcessedLandData landData) async {
+    try {
+      if (!await _hasInternetConnection()) {
+        throw LandApiException(
+          message: 'No internet connection',
+          code: 'NO_INTERNET',
+        );
+      }
+
+      _logger.i('deleting land data');
+      final response =
+      await _api.deleteUnApproved(landId: landData.id!);
+
+      if (!response.success) {
+        throw LandApiException(
+          message: response.message ?? 'Failed to delete land data',
+          code: response.message,
+        );
+      }
+
+      _logger.d('Land data deleted successfully');
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error deleting land data');
+      rethrow;
+    } catch (e, stackTrace) {
+      _handleError(e, stackTrace, 'Unexpected error deleting land data');
       rethrow;
     }
   }

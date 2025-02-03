@@ -1,7 +1,9 @@
 import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
+
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/api/simple_upload_api.dart';
@@ -9,9 +11,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../controllers/controllers.dart';
 import '../../data/models/app_status.dart';
 import '../../data/models/site_plan_model.dart';
+import '../widgets/custom_map.dart';
 import '../widgets/edit_siteplan_data.dart';
 import '../widgets/land_details_card.dart';
-import '../widgets/upload_siteplan.dart';
+import '../widgets/plots_table.dart';
 
 class DocumentSearchDashboard extends StatefulWidget {
   const DocumentSearchDashboard({super.key});
@@ -73,49 +76,52 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
             context: context,
             builder: (BuildContext context) {
               return PlotForm(
-                title: "",
-                actionText: "Confirm",
-                validate: false,
-                landData: _landSearchController.uploadedSitePlan.value!,
-                onSave: (ProcessedLandData update) async {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => const Center(
-                        child: AlertDialog(
-                      icon: Icon(
-                        Icons.upload_file,
-                        color: AppColors.primary,
-                      ),
-                      content: Padding(
-                        padding: EdgeInsets.all(15.0),
-                        child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.all(10.0),
-                                child: Text(
-                                  "Searching for matching Documents",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                  title: "",
+                  actionText: "Confirm",
+                  validate: false,
+                  landData: _landSearchController.uploadedSitePlan.value!,
+                  onSave: (ProcessedLandData update) async {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                          child: AlertDialog(
+                        icon: Icon(
+                          Icons.upload_file,
+                          color: AppColors.primary,
+                        ),
+                        content: Padding(
+                          padding: EdgeInsets.all(15.0),
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.all(10.0),
+                                  child: Text(
+                                    "Searching for matching Documents",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
                                 ),
-                              ),
-                              CircularProgressIndicator(
-                                  color: AppColors.primary)
-                            ]),
-                      ),
-                    )),
-                  );
+                                CircularProgressIndicator(
+                                    color: AppColors.primary)
+                              ]),
+                        ),
+                      )),
+                    );
 
-                  await _landSearchController.documentSearch(update);
-                  _landSearchController.searchStatus.value =
-                      SearchStatus.success;
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
-                },
-              );
+                    await _landSearchController.documentSearch(update);
+                    _landSearchController.searchStatus.value =
+                        SearchStatus.success;
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  onUpdate: (ProcessedLandData update) async {
+                    _landSearchController.updateSitePlanCoordinates(update);
+                  }, onDelete: (ProcessedLandData data) {  },);
             });
       } else {
         _landSearchController.searchStatus.value = SearchStatus.error;
@@ -155,6 +161,7 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                           _pickFiles();
                         },
                         icon: const Icon(Icons.upload_file,
+                            color: Colors.white,
                             size: 18), // Icon for the button
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
@@ -232,73 +239,123 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                                   child: SizedBox(
                                     width: 400,
                                     child: LandDetailsInfoWidget(
-                                      data: _landSearchController
-                                          .selectedMatchingSitePlan.value,
-                                      showEditButton: false,
-                                      onSave: (data) {},
-                                    ),
+                                        data: _landSearchController
+                                            .selectedMatchingSitePlan.value,
+                                        showEditButton: false,
+                                        onSave: (data) {},
+                                        onUpdate:
+                                            (ProcessedLandData update) async {
+                                          _landSearchController
+                                              .updateSitePlanCoordinates(update);
+                                        }),
                                   )),
                               Expanded(
                                 child: Stack(
                                   children: [
-                                    GoogleMap(
-                                      initialCameraPosition:
+                                    SearchablePlotTable(
+                                      plots: _landSearchController
+                                          .documentSearchResults,
+                                      updateSitePlan: _landSearchController
+                                          .updateSitePlanCoordinatesGeneral,
+                                      saveSitePlan: _landSearchController
+                                          .saveSitePlanGeneral,
+                                      deleteSitePlan: null,
+                                      getCameraPosition:
+                                          _landSearchController.getCenterPoints,
+                                      cameraPosition: _landSearchController
+                                          .initialCameraPosition3.value!,
+                                      hideSearchBar: true,
+                                      showEditButton: false,
+                                      mapView: CoordinatesMap(
+                                        coordinates: _landSearchController
+                                            .documentSearchResults
+                                            .map((sitePlan) => sitePlan
+                                                .pointList
+                                                .map((point) => latlong2.LatLng(
+                                                    point.latitude,
+                                                    point.longitude))
+                                                .toList())
+                                            .toList(),
+                                        initialZoom: 17.0,
+                                        borderRadius: 0,
+                                        mapHeight:
+                                            MediaQuery.of(context).size.height *
+                                                0.796,
+                                        onPolygonTap: (index) {
                                           _landSearchController
-                                              .initialCameraPosition3.value!,
-                                      onMapCreated:
-                                          (GoogleMapController controller) {
-                                        setState(() {
-                                          mapController = controller;
-                                          isMapReady = true;
-                                        });
-                                      },
-                                      myLocationEnabled: false,
-                                      myLocationButtonEnabled: false,
-                                      zoomControlsEnabled: false,
-                                      mapType: MapType.normal,
-                                      markers: _buildMarkersFromSearchResults(
-                                          _landSearchController),
-                                      polygons: _buildPolygonsFromSearchResults(
-                                          _landSearchController),
-                                    ),
-                                    if (!isMapReady)
-                                      const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-
-                                    // Enhanced Map Controls
-                                    Positioned(
-                                      right: 16,
-                                      bottom: 16,
-                                      child: Column(
-                                        children: [
-                                          _buildMapControl(
-                                            icon: Icons.add,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                                    CameraUpdate.zoomIn()),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          _buildMapControl(
-                                            icon: Icons.remove,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                                    CameraUpdate.zoomOut()),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          _buildMapControl(
-                                            icon: Icons.my_location,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                              CameraUpdate.newCameraPosition(
+                                              .setSelectedSitePlan(
                                                   _landSearchController
-                                                      .initialCameraPosition3
-                                                      .value!),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                                          .unApprovedSitePlans[
+                                                      index],
+                                                  refresh: false);
+                                        },
+
+                                      )
                                     ),
+
+                                    // if (!isMapReady)
+                                    //   const Center(
+                                    //     child: CircularProgressIndicator(
+                                    //         color: AppColors.primary),
+                                    //   ),
+                                    // GoogleMap(
+                                    //   initialCameraPosition:
+                                    //       _landSearchController
+                                    //           .initialCameraPosition3.value!,
+                                    //   onMapCreated:
+                                    //       (GoogleMapController controller) {
+                                    //     setState(() {
+                                    //       mapController = controller;
+                                    //       isMapReady = true;
+                                    //     });
+                                    //   },
+                                    //   myLocationEnabled: false,
+                                    //   myLocationButtonEnabled: false,
+                                    //   zoomControlsEnabled: false,
+                                    //   mapType: MapType.normal,
+                                    //   markers: _buildMarkersFromSearchResults(
+                                    //       _landSearchController),
+                                    //   polygons: _buildPolygonsFromSearchResults(
+                                    //       _landSearchController),
+                                    // ),
+                                    // if (!isMapReady)
+                                    //   const Center(
+                                    //     child: CircularProgressIndicator(),
+                                    //   ),
+                                    //
+                                    // // Enhanced Map Controls
+                                    // Positioned(
+                                    //   right: 16,
+                                    //   bottom: 16,
+                                    //   child: Column(
+                                    //     children: [
+                                    //       _buildMapControl(
+                                    //         icon: Icons.add,
+                                    //         onTap: () =>
+                                    //             mapController?.animateCamera(
+                                    //                 CameraUpdate.zoomIn()),
+                                    //       ),
+                                    //       const SizedBox(height: 8),
+                                    //       _buildMapControl(
+                                    //         icon: Icons.remove,
+                                    //         onTap: () =>
+                                    //             mapController?.animateCamera(
+                                    //                 CameraUpdate.zoomOut()),
+                                    //       ),
+                                    //       const SizedBox(height: 8),
+                                    //       _buildMapControl(
+                                    //         icon: Icons.my_location,
+                                    //         onTap: () =>
+                                    //             mapController?.animateCamera(
+                                    //           CameraUpdate.newCameraPosition(
+                                    //               _landSearchController
+                                    //                   .initialCameraPosition3
+                                    //                   .value!),
+                                    //         ),
+                                    //       ),
+                                    //     ],
+                                    //   ),
+                                    // ),
                                   ],
                                 ),
                               ),
@@ -311,6 +368,7 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                               _pickFiles();
                             },
                             icon: const Icon(Icons.upload,
+                                color: Colors.white,
                                 size: 18), // Icon for the button
                             label: const Text(
                               "Choose Document",
@@ -401,68 +459,76 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                                     context: context,
                                     builder: (BuildContext context) {
                                       return PlotForm(
-                                        title: "",
-                                        actionText: "Confirm",
-                                        validate: false,
-                                        landData: _landSearchController
-                                            .uploadedSitePlan.value!,
-                                        onSave:
-                                            (ProcessedLandData update) async {
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) => const Center(
-                                                child: AlertDialog(
-                                              icon: Icon(
-                                                Icons.upload_file,
-                                                color: AppColors.primary,
-                                              ),
-                                              content: Padding(
-                                                padding: EdgeInsets.all(15.0),
-                                                child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .center,
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Padding(
-                                                        padding: EdgeInsets.all(
-                                                            10.0),
-                                                        child: Text(
-                                                          "Searching for matching Documents",
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
+                                          title: "",
+                                          actionText: "Confirm",
+                                          validate: false,
+                                          landData: _landSearchController
+                                              .uploadedSitePlan.value!,
+                                          onSave:
+                                              (ProcessedLandData update) async {
+                                            showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (context) =>
+                                                  const Center(
+                                                      child: AlertDialog(
+                                                icon: Icon(
+                                                  Icons.upload_file,
+                                                  color: AppColors.primary,
+                                                ),
+                                                content: Padding(
+                                                  padding: EdgeInsets.all(15.0),
+                                                  child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                  10.0),
+                                                          child: Text(
+                                                            "Searching for matching Documents",
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
                                                         ),
-                                                      ),
-                                                      CircularProgressIndicator(
-                                                          color:
-                                                              AppColors.primary)
-                                                    ]),
-                                              ),
-                                            )),
-                                          );
-                                          final results =
+                                                        CircularProgressIndicator(
+                                                            color: AppColors
+                                                                .primary)
+                                                      ]),
+                                                ),
+                                              )),
+                                            );
+                                            final results =
+                                                await _landSearchController
+                                                    .reComputeCoordinates(
+                                                        update);
+                                            if (results != null) {
                                               await _landSearchController
-                                                  .reComputeCoordinates(update);
-                                          if (results != null) {
-                                            await _landSearchController
-                                                .documentSearch(results);
-                                          }
-                                          if (mounted) {
-                                            Navigator.pop(context);
-                                          }
-                                        },
-                                      );
+                                                  .documentSearch(results);
+                                            }
+                                            if (mounted) {
+                                              Navigator.pop(context);
+                                            }
+                                          },
+                                          onUpdate:
+                                              (ProcessedLandData update) async {
+                                            _landSearchController
+                                                .updateSitePlanCoordinates(update);
+                                          }, onDelete: null);
                                     });
                               }
                             },
                             icon: const Icon(Icons.edit_outlined,
+                                color: Colors.white,
                                 size: 18), // Icon for the button
                             label: const Text(
                               "Modify",
@@ -486,6 +552,7 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                           ElevatedButton.icon(
                             onPressed: () async {},
                             icon: const Icon(Icons.report,
+                                color: Colors.white,
                                 size: 18), // Icon for the button
                             label: const Text(
                               "Report",
@@ -667,23 +734,24 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
     return _landSearchController.documentSearchResults
         .where((land) => land.pointList.isNotEmpty)
         .map((land) {
-          return  Polygon(
-        polygonId: PolygonId(land.id ?? 'polygon'),
-    points: land.pointList
-        .map((point) =>
-    LatLng(point.latitude ?? 0, point.longitude ?? 0))
-        .toList(),
-    strokeColor: land.id == "search-site-plan" ? Colors.redAccent.withOpacity(0.7):  AppColors.primary.withOpacity(0.7),
-    fillColor: land.id == "search-site-plan" ? Colors.redAccent.withOpacity(0.4):  AppColors.primary.withOpacity(0.2),
-    strokeWidth: 2,
-    onTap: () {
-
-    // controller.setSelectedUnApprovedSitePlan(land,
-    //     refresh: false, which: "search");
-    // _showLandDetailsBottomSheet(land);
-    });
-    })
-        .toSet();
+      return Polygon(
+          polygonId: PolygonId(land.id ?? 'polygon'),
+          points: land.pointList
+              .map((point) => LatLng(point.latitude ?? 0, point.longitude ?? 0))
+              .toList(),
+          strokeColor: land.id == "search-site-plan"
+              ? Colors.redAccent.withOpacity(0.7)
+              : AppColors.primary.withOpacity(0.7),
+          fillColor: land.id == "search-site-plan"
+              ? Colors.redAccent.withOpacity(0.4)
+              : AppColors.primary.withOpacity(0.2),
+          strokeWidth: 2,
+          onTap: () {
+            // controller.setSelectedUnApprovedSitePlan(land,
+            //     refresh: false, which: "search");
+            // _showLandDetailsBottomSheet(land);
+          });
+    }).toSet();
   }
 
   Future<void> _createDotMarker() async {

@@ -246,7 +246,7 @@ class _FileUploadScreenState extends State<FileUploadScreen> {
                               const SizedBox(height: 8),
                               ElevatedButton.icon(
                                 onPressed: _pickFiles,
-                                icon: const Icon(Icons.add, size: 20),
+                                icon: const Icon(Icons.add, size: 20, color: Colors.white,),
                                 label: const Text('Browse Files'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,

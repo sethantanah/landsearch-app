@@ -2,6 +2,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,9 +10,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../controllers/controllers.dart';
 import '../../data/models/app_status.dart';
 import '../../data/models/site_plan_model.dart';
+import '../widgets/custom_map.dart';
 import '../widgets/land_details_card.dart';
+import '../widgets/plots_table.dart';
 import '../widgets/region_card.dart';
-import 'document_search_page.dart';
 
 class ExplorerDashboard extends StatefulWidget {
   const ExplorerDashboard({super.key});
@@ -23,7 +25,7 @@ class ExplorerDashboard extends StatefulWidget {
 class _ExplorerDashboardState extends State<ExplorerDashboard> {
   final LandSearchController _landSearchController = Get.find();
   GoogleMapController? mapController;
-  bool isMapReady = false;
+  bool isMapReady = true;
   BitmapDescriptor? dotMarker;
   int selectedRegionIndex = -1;
   ProcessedLandData? selectedSitePlan;
@@ -31,8 +33,6 @@ class _ExplorerDashboardState extends State<ExplorerDashboard> {
   @override
   void initState() {
     super.initState();
-    // Initialize search with default parameters if needed
-    _landSearchController.searchLands();
     _createDotMarker();
   }
 
@@ -82,56 +82,56 @@ class _ExplorerDashboardState extends State<ExplorerDashboard> {
                 }),
 
                 // Enhanced Search Bar
-                Obx(() {
-                  if (_landSearchController.regionsData.isEmpty) {
-                    // return const SizedBox();
-                    return const SizedBox(
-                      height: 0,
-                      width: 0,
-                    );
-                  } else {
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Expanded(child: _buildSearchBar()),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              // _landSearchController.setActivePage(2);
-                              showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (context) =>
-                                      const DocumentSearchDashboard());
-                            },
-                            icon: const Icon(Icons.file_copy_outlined,
-                                size: 18), // Icon for the button
-                            label: const Text(
-                              "Document Search",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              maximumSize: const Size(213, 50),
-                              foregroundColor: Colors.white,
-                              backgroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              // Text color
-                              elevation: 5, // Shadow
-                            ),
-                          )
-                        ],
-                      ),
-                    );
-                  }
-                }),
+                // Obx(() {
+                //   if (_landSearchController.regionsData.isEmpty) {
+                //     // return const SizedBox();
+                //     return const SizedBox(
+                //       height: 0,
+                //       width: 0,
+                //     );
+                //   } else {
+                //     return Padding(
+                //       padding: const EdgeInsets.all(16.0),
+                //       child: Row(
+                //         children: [
+                //           // Expanded(child: _buildSearchBar()),
+                //           const SizedBox(
+                //             width: 10,
+                //           ),
+                //           // ElevatedButton.icon(
+                //           //   onPressed: () {
+                //           //     // _landSearchController.setActivePage(2);
+                //           //     showDialog(
+                //           //         context: context,
+                //           //         barrierDismissible: false,
+                //           //         builder: (context) =>
+                //           //             const DocumentSearchDashboard());
+                //           //   },
+                //           //   icon: const Icon(Icons.file_copy_outlined,
+                //           //       size: 18, color: Colors.white), // Icon for the button
+                //           //   label: const Text(
+                //           //     "Document Search",
+                //           //     style: TextStyle(
+                //           //         fontSize: 16, fontWeight: FontWeight.bold),
+                //           //   ),
+                //           //   style: ElevatedButton.styleFrom(
+                //           //     maximumSize: const Size(213, 50),
+                //           //     foregroundColor: Colors.white,
+                //           //     backgroundColor: AppColors.primary,
+                //           //     padding: const EdgeInsets.symmetric(
+                //           //         horizontal: 24, vertical: 20),
+                //           //     shape: RoundedRectangleBorder(
+                //           //       borderRadius: BorderRadius.circular(12),
+                //           //     ),
+                //           //     // Text color
+                //           //     elevation: 5, // Shadow
+                //           //   ),
+                //           // )
+                //         ],
+                //       ),
+                //     );
+                //   }
+                // }),
 
                 // Enhanced Map View
                 Expanded(
@@ -191,7 +191,8 @@ class _ExplorerDashboardState extends State<ExplorerDashboard> {
                                       onSave: (ProcessedLandData update) async {
                                         final updatedData =
                                             await _landSearchController
-                                                .updateSitePlanGeneral(update);
+                                                .updateSitePlanCoordinatesGeneral(
+                                                    update);
 
                                         if (updatedData != null) {
                                           await _landSearchController
@@ -209,31 +210,76 @@ class _ExplorerDashboardState extends State<ExplorerDashboard> {
                                           }
                                         }
                                       },
+                                      onUpdate:
+                                          (ProcessedLandData update) async {
+                                        return _landSearchController
+                                            .updateSitePlanCoordinates(update);
+                                      },
+                                      onDelete: (ProcessedLandData data) async {
+                                        await _landSearchController
+                                            .deleteSitePlan(data);
+                                      },
                                     ),
                                   )),
                               Expanded(
                                 child: Stack(
                                   children: [
-                                    GoogleMap(
-                                      initialCameraPosition:
+                                    SearchablePlotTable(
+                                      plots:
+                                          _landSearchController.searchResults,
+                                      updateSitePlan: (data) =>
                                           _landSearchController
-                                              .initialCameraPosition.value!,
-                                      onMapCreated:
-                                          (GoogleMapController controller) {
-                                        setState(() {
-                                          mapController = controller;
-                                          isMapReady = true;
-                                        });
+                                              .updateSitePlanCoordinatesGeneral(
+                                                  data),
+                                      saveSitePlan:
+                                          _landSearchController.updateSitePlan,
+                                      getCameraPosition:
+                                          _landSearchController.getCenterPoints,
+                                      cameraPosition: _landSearchController
+                                          .initialCameraPosition.value!,
+                                      mapView: CoordinatesMap(
+                                        coordinates: _landSearchController
+                                            .searchResults
+                                            .map((sitePlan) => sitePlan
+                                                .pointList
+                                                .map((point) => latlong2.LatLng(
+                                                    point.latitude,
+                                                    point.longitude))
+                                                .toList())
+                                            .toList(),
+                                        initialZoom: 7.0,
+                                        borderRadius: 0,
+                                        mapHeight:
+                                            MediaQuery.of(context).size.height *
+                                                0.78,
+                                      ),
+                                      deleteSitePlan:
+                                          (ProcessedLandData data) async {
+                                        await _landSearchController
+                                            .deleteSitePlan(data);
                                       },
-                                      myLocationEnabled: false,
-                                      myLocationButtonEnabled: false,
-                                      zoomControlsEnabled: false,
-                                      mapType: MapType.normal,
-                                      markers: _buildMarkersFromSearchResults(
-                                          _landSearchController),
-                                      polygons:
-                                          _buildPolygonsFromSearchResults(),
                                     ),
+
+                                    // GoogleMap(
+                                    //   initialCameraPosition:
+                                    //       _landSearchController
+                                    //           .initialCameraPosition.value!,
+                                    //   onMapCreated:
+                                    //       (GoogleMapController controller) {
+                                    //     setState(() {
+                                    //       mapController = controller;
+                                    //       isMapReady = true;
+                                    //     });
+                                    //   },
+                                    //   myLocationEnabled: false,
+                                    //   myLocationButtonEnabled: false,
+                                    //   zoomControlsEnabled: false,
+                                    //   mapType: MapType.normal,
+                                    //   markers: _buildMarkersFromSearchResults(
+                                    //       _landSearchController),
+                                    //   polygons:
+                                    //       _buildPolygonsFromSearchResults(),
+                                    // ),
                                     if (!isMapReady)
                                       const Center(
                                         child: CircularProgressIndicator(
@@ -241,38 +287,38 @@ class _ExplorerDashboardState extends State<ExplorerDashboard> {
                                       ),
 
                                     // Enhanced Map Controls
-                                    Positioned(
-                                      right: 16,
-                                      bottom: 16,
-                                      child: Column(
-                                        children: [
-                                          _buildMapControl(
-                                            icon: Icons.add,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                                    CameraUpdate.zoomIn()),
-                                          ),
-                                          SizedBox(height: 8),
-                                          _buildMapControl(
-                                            icon: Icons.remove,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                                    CameraUpdate.zoomOut()),
-                                          ),
-                                          SizedBox(height: 8),
-                                          _buildMapControl(
-                                            icon: Icons.my_location,
-                                            onTap: () =>
-                                                mapController?.animateCamera(
-                                              CameraUpdate.newCameraPosition(
-                                                  _landSearchController
-                                                      .initialCameraPosition
-                                                      .value!),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    // Positioned(
+                                    //   right: 16,
+                                    //   bottom: 16,
+                                    //   child: Column(
+                                    //     children: [
+                                    //       _buildMapControl(
+                                    //         icon: Icons.add,
+                                    //         onTap: () =>
+                                    //             mapController?.animateCamera(
+                                    //                 CameraUpdate.zoomIn()),
+                                    //       ),
+                                    //       SizedBox(height: 8),
+                                    //       _buildMapControl(
+                                    //         icon: Icons.remove,
+                                    //         onTap: () =>
+                                    //             mapController?.animateCamera(
+                                    //                 CameraUpdate.zoomOut()),
+                                    //       ),
+                                    //       SizedBox(height: 8),
+                                    //       _buildMapControl(
+                                    //         icon: Icons.my_location,
+                                    //         onTap: () =>
+                                    //             mapController?.animateCamera(
+                                    //           CameraUpdate.newCameraPosition(
+                                    //               _landSearchController
+                                    //                   .initialCameraPosition
+                                    //                   .value!),
+                                    //         ),
+                                    //       ),
+                                    //     ],
+                                    //   ),
+                                    // ),
                                   ],
                                 ),
                               ),
@@ -283,7 +329,7 @@ class _ExplorerDashboardState extends State<ExplorerDashboard> {
                               child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("Your siteplan database is empty!")
+                              Text("Your site plan database is empty!")
                               // const SizedBox(
                               //   height: 10,
                               // ),

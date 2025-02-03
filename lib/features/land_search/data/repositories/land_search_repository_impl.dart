@@ -14,13 +14,20 @@ abstract class LandRepository {
       UnApprovedSitePlansParams params);
   Future<List<ProcessedLandData>> searchLands(LandSearchParams filters);
   Future<LandUploadResponse> uploadLand(ProcessedLandData landData);
-  Future<ProcessedLandData> updateLand(String id, ProcessedLandData landData);
+  Future<ProcessedLandData> updateSitePlanCoordinates(
+      String id, ProcessedLandData landData);
+  Future<ProcessedLandData> updateSitePlan(
+      String id, ProcessedLandData landData);
   Future<ProcessedLandData> saveSitePlan(String id, ProcessedLandData landData);
   Future<DocumentUploadResponse> uploadDocument({
     required File file,
     required String landId,
     String? documentType,
   });
+  Future<void> deleteSitePlan(
+      ProcessedLandData landData);
+  Future<void> deleteUnapprovedSitePlan(
+      ProcessedLandData landData);
   Future<PlotValidationResponse> validatePlotNumber(String plotNumber);
   Future<List<LandDocument>> getLandDocuments(String landId);
 }
@@ -96,8 +103,7 @@ class LandRepositoryImpl implements LandRepository {
   Future<List<ProcessedLandData>> searchLands(LandSearchParams filters) async {
     try {
       // First try API search
-      final searchResults = await _apiService
-          .searchLands(filters);
+      final searchResults = await _apiService.searchLands(filters);
 
       // Cache results locally
       // await _storageService.saveSearchResults(searchResults);
@@ -136,16 +142,13 @@ class LandRepositoryImpl implements LandRepository {
   }
 
   @override
-  Future<ProcessedLandData> updateLand(
+  Future<ProcessedLandData> updateSitePlanCoordinates(
       String id, ProcessedLandData landData) async {
     try {
       // Update locally first
-      final result = await _apiService.updateSitePlan(landData, id);
-      // await _storageService.updateLandData(result);
+      final result = await _apiService.updateSitePlanCoordinates(landData, id);
       return result;
     } catch (e) {
-      // Mark for sync later
-      // await _storageService.markLandDataForSync(id);
       rethrow;
     }
   }
@@ -156,6 +159,43 @@ class LandRepositoryImpl implements LandRepository {
     try {
       // Update locally first
       final result = await _apiService.saveSitePlan(landData, id);
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<ProcessedLandData> updateSitePlan(
+      String id, ProcessedLandData landData) async {
+    try {
+      // Update locally first
+      final result = await _apiService.updateSitePlan(landData);
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+
+  @override
+  Future<void> deleteSitePlan(
+      ProcessedLandData landData) async {
+    try {
+      // Delete
+      final result = await _apiService.deleteSitePlan(landData);
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteUnapprovedSitePlan(
+      ProcessedLandData landData) async {
+    try {
+      // Delete
+      final result = await _apiService.deleteSitePlan(landData);
       return result;
     } catch (e) {
       rethrow;
