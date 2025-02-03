@@ -183,7 +183,7 @@ class _SearchablePlotTableState extends State<SearchablePlotTable> {
               label: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: const Text(
-                  'ID',
+                  'Plot Number',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -499,7 +499,7 @@ class PlotDataSource extends DataTableSource {
         return null;
       }),
       cells: [
-        plot.plotInfo.isSearchPlan == true ? _buildDataCell("${plot.id} - Searched Plan", textColor: Colors.redAccent) :  _buildDataCell(plot.id ?? 'N/A'),
+        plot.plotInfo.isSearchPlan == true ? _buildDataCell("${plot.plotInfo.plotNumber} - Searched Plan", textColor: Colors.redAccent) :  _buildDataCell(plot.plotInfo.plotNumber ?? 'N/A'),
         _buildDataCell(plot.plotInfo.locality ?? 'N/A'),
         _buildDataCell(plot.plotInfo.district ?? 'N/A'),
         _buildDataCell(plot.plotInfo.region ?? 'N/A'),
