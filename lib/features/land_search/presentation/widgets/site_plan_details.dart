@@ -86,6 +86,7 @@ class _SitePlanDetailsState extends State<SitePlanDetails> {
             child: CoordinatesMap(
               coordinates: [
                 widget.sitePlans[0].pointList
+                    .where((point) => point.refPoint == false)
                     .map((point) =>
                         latlong2.LatLng(point.latitude, point.longitude))
                     .toList()

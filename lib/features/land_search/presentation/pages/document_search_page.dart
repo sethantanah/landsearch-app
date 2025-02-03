@@ -31,7 +31,6 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
   BitmapDescriptor? dotMarker;
   bool singleMatch = false;
 
-
   Future<void> _pickFiles() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -113,14 +112,15 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                     )),
                   );
 
-                  var sitePlans = await _landSearchController.documentSearch(update);
+                  var sitePlans =
+                      await _landSearchController.documentSearch(update);
 
-                  if(sitePlans.length == 1){
-                    if(sitePlans[0].plotInfo.isSearchPlan == true){
+                  if (sitePlans.length == 1) {
+                    if (sitePlans[0].plotInfo.isSearchPlan == true) {
                       setState(() {
                         singleMatch = true;
                       });
-                    }else{
+                    } else {
                       setState(() {
                         singleMatch = false;
                       });
@@ -269,52 +269,64 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                               Expanded(
                                 child: Stack(
                                   children: [
-
-                                    if (_landSearchController.documentSearchResults.isEmpty)
-                                      const Center(child: Text("No matching site plans found!"),)
-                                    else if(_landSearchController.documentSearchResults.length == 1 && singleMatch == true)
-                                      const Center(child: Text("No matching site plans found, except itself!"),)
+                                    if (_landSearchController
+                                        .documentSearchResults.isEmpty)
+                                      const Center(
+                                        child: Text(
+                                            "No matching site plans found!"),
+                                      )
+                                    else if (_landSearchController
+                                                .documentSearchResults.length ==
+                                            1 &&
+                                        singleMatch == true)
+                                      const Center(
+                                        child: Text(
+                                            "No matching site plans found, except itself!"),
+                                      )
                                     else
-                                       SearchablePlotTable(
-                                        plots: _landSearchController
-                                            .documentSearchResults,
-                                        updateSitePlan: _landSearchController
-                                            .updateSitePlanCoordinatesGeneral,
-                                        saveSitePlan: _landSearchController
-                                            .saveSitePlanGeneral,
-                                        deleteSitePlan: null,
-                                        getCameraPosition: _landSearchController
-                                            .getCenterPoints,
-                                        cameraPosition: _landSearchController
-                                            .initialCameraPosition3.value!,
-                                        hideSearchBar: true,
-                                        showEditButton: false,
-                                        mapView: CoordinatesMap(
-                                          coordinates: _landSearchController
-                                              .documentSearchResults
-                                              .map((sitePlan) => sitePlan
-                                                  .pointList
-                                                  .map((point) =>
-                                                      latlong2.LatLng(
-                                                          point.latitude,
-                                                          point.longitude))
-                                                  .toList())
-                                              .toList(),
-                                          initialZoom: 17.0,
-                                          borderRadius: 0,
-                                          mapHeight: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.796,
-                                          onPolygonTap: (index) {
-                                            _landSearchController
-                                                .setSelectedSitePlan(
-                                                    _landSearchController
-                                                            .unApprovedSitePlans[
-                                                        index],
-                                                    refresh: false);
-                                          },
-                                        )),
+                                      SearchablePlotTable(
+                                          plots: _landSearchController
+                                              .documentSearchResults,
+                                          updateSitePlan: _landSearchController
+                                              .updateSitePlanCoordinatesGeneral,
+                                          saveSitePlan: _landSearchController
+                                              .saveSitePlanGeneral,
+                                          deleteSitePlan: null,
+                                          getCameraPosition:
+                                              _landSearchController
+                                                  .getCenterPoints,
+                                          cameraPosition: _landSearchController
+                                              .initialCameraPosition3.value!,
+                                          hideSearchBar: true,
+                                          showEditButton: false,
+                                          mapView: CoordinatesMap(
+                                            coordinates: _landSearchController
+                                                .documentSearchResults
+                                                .map((sitePlan) => sitePlan
+                                                    .pointList
+                                                    .where((point) =>
+                                                        point.refPoint == false)
+                                                    .map((point) =>
+                                                        latlong2.LatLng(
+                                                            point.latitude,
+                                                            point.longitude))
+                                                    .toList())
+                                                .toList(),
+                                            initialZoom: 17.0,
+                                            borderRadius: 0,
+                                            mapHeight: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.796,
+                                            onPolygonTap: (index) {
+                                              _landSearchController
+                                                  .setSelectedSitePlan(
+                                                      _landSearchController
+                                                              .unApprovedSitePlans[
+                                                          index],
+                                                      refresh: false);
+                                            },
+                                          )),
 
                                     // if (!isMapReady)
                                     //   const Center(

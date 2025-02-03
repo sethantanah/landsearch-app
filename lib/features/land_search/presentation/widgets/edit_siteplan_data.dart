@@ -480,6 +480,7 @@ class _PlotFormState extends State<PlotForm>
                   coordinates: [
                     _landData.pointList
                         .toList()
+                        .where((point) => point.refPoint == false)
                         .map((point) => LatLng(point.latitude, point.longitude))
                         .toList()
                   ],

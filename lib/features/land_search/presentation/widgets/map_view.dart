@@ -73,20 +73,20 @@ class _MapViewState extends State<MapPreview> {
                     ),
                   )),
 
-
-                Expanded(
-                  child: CoordinatesMap(
-                    coordinates: [
-                      widget.data!.pointList
-                          .map((point) =>
-                              latlong2.LatLng(point.latitude, point.longitude))
-                          .toList()
-                    ],
-                    initialZoom: 17.0,
-                    borderRadius: 0,
-                    mapHeight: MediaQuery.of(context).size.height * 0.86,
-                  ),
+              Expanded(
+                child: CoordinatesMap(
+                  coordinates: [
+                    widget.data!.pointList
+                        .where((point) => point.refPoint == false)
+                        .map((point) =>
+                            latlong2.LatLng(point.latitude, point.longitude))
+                        .toList()
+                  ],
+                  initialZoom: 17.0,
+                  borderRadius: 0,
+                  mapHeight: MediaQuery.of(context).size.height * 0.86,
                 ),
+              ),
 
               // Expanded(
               //   child: Stack(

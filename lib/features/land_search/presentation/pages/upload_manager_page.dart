@@ -206,6 +206,7 @@ class _UploadManagerState extends State<UploadManager> {
                                         .selectedUnApprovedSitePlan
                                         .value!
                                         .pointList
+                                        .where((point) => point.refPoint == false)
                                         .map((point) => latlong2.LatLng(
                                             point.latitude, point.longitude))
                                         .toList()
