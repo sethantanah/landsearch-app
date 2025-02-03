@@ -371,7 +371,7 @@ class _UploadManagerState extends State<UploadManager> {
                                         onSave:
                                             (ProcessedLandData update) async {
                                           _landSearchController
-                                              .updateSitePlanCoordinatesGeneral(
+                                              .updateSitePlanCoordinates(
                                                   update);
                                         },
                                         onUpdate:

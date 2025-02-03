@@ -56,6 +56,14 @@ Future<ApiResponse<LandListResponse>> loadLands({
   });
 
 
+
+  @PUT('/api/document-processing/update-siteplan-unapproved/{landId}')
+  Future<ApiResponse<ProcessedLandData>> updateSitePlanUnapproved({
+    @Path('landId') required String landId,
+    @Body() required ProcessedLandData landData,
+  });
+
+
   @PUT('/api/document-processing/update-siteplan/{landId}')
   Future<ApiResponse<ProcessedLandData>> updateSitePlan({
     @Path('landId') required String landId,

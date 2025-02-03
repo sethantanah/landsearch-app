@@ -53,7 +53,7 @@ class _PlotFormState extends State<PlotForm>
   void initState() {
     super.initState();
     _landData = widget.landData;
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -64,14 +64,14 @@ class _PlotFormState extends State<PlotForm>
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController.index == 2) {
-      // if(widget.validate == false){
-      //   setState(() {
-      //     _landData.id = "search-site-plan";
-      //   });
-      // }
-      _formKey.currentState!.save();
-    }
+    // if (_tabController.index == 2) {
+    //   // if(widget.validate == false){
+    //   //   setState(() {
+    //   //     _landData.id = "search-site-plan";
+    //   //   });
+    //   // }
+    //   _formKey.currentState!.save();
+    // }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -141,10 +141,10 @@ class _PlotFormState extends State<PlotForm>
             //   icon: Icon(Icons.area_chart_outlined),
             //   text: 'Boundary',
             // ),
-            Tab(
-              icon: Icon(Icons.preview_outlined),
-              text: 'Preview',
-            ),
+            // Tab(
+            //   icon: Icon(Icons.preview_outlined),
+            //   text: 'Preview',
+            // ),
           ],
           indicatorColor: Theme.of(context).primaryColor,
           labelColor: Theme.of(context).primaryColor,
@@ -206,7 +206,7 @@ class _PlotFormState extends State<PlotForm>
                   //     ],
                   //   ),
                   // ),
-                  Expanded(child: MapPreview(data: _landData))
+                  // Expanded(child: MapPreview(data: _landData))
                 ],
               ),
             ),

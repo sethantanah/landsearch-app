@@ -254,7 +254,8 @@ class LandApiService {
     }
   }
 
-  Future<List<ProcessedLandData>> loadLands(String userId, LandSearchParams params) async {
+  Future<List<ProcessedLandData>> loadLands(
+      String userId, LandSearchParams params) async {
     try {
       if (!await _hasInternetConnection()) {
         throw LandApiException(
@@ -443,7 +444,6 @@ class LandApiService {
     }
   }
 
-
   Future<ProcessedLandData> saveSitePlan(
       ProcessedLandData landData, String userId) async {
     try {
@@ -456,7 +456,7 @@ class LandApiService {
 
       _logger.i('Saving land data');
       final response =
-      await _api.saveSitePlanData(landData: landData, userId: userId);
+          await _api.saveSitePlanData(landData: landData, userId: userId);
 
       if (!response.success) {
         throw LandApiException(
@@ -476,8 +476,7 @@ class LandApiService {
     }
   }
 
-
-  Future<ProcessedLandData> updateSitePlan(
+  Future<ProcessedLandData> updateSitePlanUnapproved(
       ProcessedLandData landData) async {
     try {
       if (!await _hasInternetConnection()) {
@@ -489,7 +488,7 @@ class LandApiService {
 
       _logger.i('updating land data');
       final response =
-      await _api.updateSitePlan(landId: landData.id!, landData: landData);
+          await _api.updateSitePlanUnapproved(landId: landData.id!, landData: landData);
 
       if (!response.success) {
         throw LandApiException(
@@ -509,11 +508,38 @@ class LandApiService {
     }
   }
 
+  Future<ProcessedLandData> updateSitePlan(ProcessedLandData landData) async {
+    try {
+      if (!await _hasInternetConnection()) {
+        throw LandApiException(
+          message: 'No internet connection',
+          code: 'NO_INTERNET',
+        );
+      }
 
+      _logger.i('updating land data');
+      final response =
+          await _api.updateSitePlan(landId: landData.id!, landData: landData);
 
+      if (!response.success) {
+        throw LandApiException(
+          message: response.message ?? 'Failed to update land data',
+          code: response.message,
+        );
+      }
 
-  Future<void> deleteSitePlan(
-      ProcessedLandData landData) async {
+      _logger.d('Land data updated successfully');
+      return response.data;
+    } on DioException catch (e) {
+      _handleDioError(e, 'Error update land data');
+      rethrow;
+    } catch (e, stackTrace) {
+      _handleError(e, stackTrace, 'Unexpected error update land data');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteSitePlan(ProcessedLandData landData) async {
     try {
       if (!await _hasInternetConnection()) {
         throw LandApiException(
@@ -523,8 +549,7 @@ class LandApiService {
       }
 
       _logger.i('deleting land data');
-      final response =
-      await _api.deleteSitePlan(landId: landData.id!);
+      final response = await _api.deleteSitePlan(landId: landData.id!);
 
       if (!response.success) {
         throw LandApiException(
@@ -543,9 +568,7 @@ class LandApiService {
     }
   }
 
-
-  Future<void> deleteUnapprovedSitePlan(
-      ProcessedLandData landData) async {
+  Future<void> deleteUnapprovedSitePlan(ProcessedLandData landData) async {
     try {
       if (!await _hasInternetConnection()) {
         throw LandApiException(
@@ -555,8 +578,7 @@ class LandApiService {
       }
 
       _logger.i('deleting land data');
-      final response =
-      await _api.deleteUnApproved(landId: landData.id!);
+      final response = await _api.deleteUnApproved(landId: landData.id!);
 
       if (!response.success) {
         throw LandApiException(

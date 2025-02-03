@@ -193,6 +193,7 @@ class PlotInfo {
   String? surveyorsRegNumber;
   String? regionalNumber;
   String? referenceNumber;
+  bool? isSearchPlan;
 
   PlotInfo({
     this.plotNumber = "",
@@ -210,6 +211,7 @@ class PlotInfo {
     this.surveyorsRegNumber,
     this.regionalNumber,
     this.referenceNumber,
+    this.isSearchPlan = false,
   });
 
   factory PlotInfo.fromJson(Map<String, dynamic> json) {
@@ -229,6 +231,7 @@ class PlotInfo {
       surveyorsRegNumber: json['surveyors_reg_number'],
       regionalNumber: json['regional_number'],
       referenceNumber: json['reference_number'],
+      isSearchPlan: json['is_search_plan'],
     );
   }
 
@@ -248,6 +251,7 @@ class PlotInfo {
         'surveyors_reg_number': surveyorsRegNumber,
         'regional_number': regionalNumber,
         'reference_number': referenceNumber,
+        'is_search_plan': isSearchPlan,
       };
 }
 

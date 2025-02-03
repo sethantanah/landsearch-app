@@ -18,16 +18,16 @@ abstract class LandRepository {
       String id, ProcessedLandData landData);
   Future<ProcessedLandData> updateSitePlan(
       String id, ProcessedLandData landData);
+  Future<ProcessedLandData> updateSitePlanUnapproved(
+      String id, ProcessedLandData landData);
   Future<ProcessedLandData> saveSitePlan(String id, ProcessedLandData landData);
   Future<DocumentUploadResponse> uploadDocument({
     required File file,
     required String landId,
     String? documentType,
   });
-  Future<void> deleteSitePlan(
-      ProcessedLandData landData);
-  Future<void> deleteUnapprovedSitePlan(
-      ProcessedLandData landData);
+  Future<void> deleteSitePlan(ProcessedLandData landData);
+  Future<void> deleteUnapprovedSitePlan(ProcessedLandData landData);
   Future<PlotValidationResponse> validatePlotNumber(String plotNumber);
   Future<List<LandDocument>> getLandDocuments(String landId);
 }
@@ -166,6 +166,18 @@ class LandRepositoryImpl implements LandRepository {
   }
 
   @override
+  Future<ProcessedLandData> updateSitePlanUnapproved(
+      String id, ProcessedLandData landData) async {
+    try {
+      // Update locally first
+      final result = await _apiService.updateSitePlanUnapproved(landData);
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<ProcessedLandData> updateSitePlan(
       String id, ProcessedLandData landData) async {
     try {
@@ -177,10 +189,8 @@ class LandRepositoryImpl implements LandRepository {
     }
   }
 
-
   @override
-  Future<void> deleteSitePlan(
-      ProcessedLandData landData) async {
+  Future<void> deleteSitePlan(ProcessedLandData landData) async {
     try {
       // Delete
       final result = await _apiService.deleteSitePlan(landData);
@@ -191,8 +201,7 @@ class LandRepositoryImpl implements LandRepository {
   }
 
   @override
-  Future<void> deleteUnapprovedSitePlan(
-      ProcessedLandData landData) async {
+  Future<void> deleteUnapprovedSitePlan(ProcessedLandData landData) async {
     try {
       // Delete
       final result = await _apiService.deleteSitePlan(landData);

@@ -306,9 +306,17 @@ class _SearchablePlotTableState extends State<SearchablePlotTable> {
               markers: _buildMarkers(widget.plots),
               polygons: _buildPolygons(widget.plots),
             ),
-
+        if (mapView != null)
+          Positioned(
+            right: 16,
+            top: 16,
+            child: _buildMapControl(
+              icon: Icons.map,
+              onTap: _toggleView,
+            ),
+          )
         // Enhanced Map Controls
-       if (mapView == null)
+       else
          Positioned(
           right: 16,
           bottom: 16,
@@ -491,7 +499,7 @@ class PlotDataSource extends DataTableSource {
         return null;
       }),
       cells: [
-        _buildDataCell(plot.id ?? 'N/A'),
+        plot.plotInfo.isSearchPlan == true ? _buildDataCell("${plot.id} - Searched Plan", textColor: Colors.redAccent) :  _buildDataCell(plot.id ?? 'N/A'),
         _buildDataCell(plot.plotInfo.locality ?? 'N/A'),
         _buildDataCell(plot.plotInfo.district ?? 'N/A'),
         _buildDataCell(plot.plotInfo.region ?? 'N/A'),
@@ -518,7 +526,7 @@ class PlotDataSource extends DataTableSource {
     );
   }
 
-  DataCell _buildDataCell(String text) {
+  DataCell _buildDataCell(String text, {Color? textColor}) {
     return DataCell(
       MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -526,9 +534,9 @@ class PlotDataSource extends DataTableSource {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.black87,
+              color: textColor ?? Colors.black87,
             ),
           ),
         ),

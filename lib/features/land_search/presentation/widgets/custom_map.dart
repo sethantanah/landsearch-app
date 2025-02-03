@@ -131,7 +131,7 @@ class _CoordinatesMapState extends State<CoordinatesMap> {
                   ),
                   Positioned(
                     right: 16,
-                    bottom: 16,
+                    top: 57,
                     child: Column(
                       children: [
                         buildMapControl(

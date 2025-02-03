@@ -29,6 +29,8 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
   GoogleMapController? mapController;
   bool isMapReady = false;
   BitmapDescriptor? dotMarker;
+  bool singleMatch = false;
+
 
   Future<void> _pickFiles() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -76,52 +78,66 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
             context: context,
             builder: (BuildContext context) {
               return PlotForm(
-                  title: "",
-                  actionText: "Confirm",
-                  validate: false,
-                  landData: _landSearchController.uploadedSitePlan.value!,
-                  onSave: (ProcessedLandData update) async {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => const Center(
-                          child: AlertDialog(
-                        icon: Icon(
-                          Icons.upload_file,
-                          color: AppColors.primary,
-                        ),
-                        content: Padding(
-                          padding: EdgeInsets.all(15.0),
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.all(10.0),
-                                  child: Text(
-                                    "Searching for matching Documents",
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                title: "",
+                actionText: "Confirm",
+                validate: false,
+                landData: _landSearchController.uploadedSitePlan.value!,
+                onSave: (ProcessedLandData update) async {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(
+                        child: AlertDialog(
+                      icon: Icon(
+                        Icons.upload_file,
+                        color: AppColors.primary,
+                      ),
+                      content: Padding(
+                        padding: EdgeInsets.all(15.0),
+                        child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.all(10.0),
+                                child: Text(
+                                  "Searching for matching Documents",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                                CircularProgressIndicator(
-                                    color: AppColors.primary)
-                              ]),
-                        ),
-                      )),
-                    );
+                              ),
+                              CircularProgressIndicator(
+                                  color: AppColors.primary)
+                            ]),
+                      ),
+                    )),
+                  );
 
-                    await _landSearchController.documentSearch(update);
-                    _landSearchController.searchStatus.value =
-                        SearchStatus.success;
-                    if (mounted) {
-                      Navigator.pop(context);
+                  var sitePlans = await _landSearchController.documentSearch(update);
+
+                  if(sitePlans.length == 1){
+                    if(sitePlans[0].plotInfo.isSearchPlan == true){
+                      setState(() {
+                        singleMatch = true;
+                      });
+                    }else{
+                      setState(() {
+                        singleMatch = false;
+                      });
                     }
-                  },
-                  onUpdate: (ProcessedLandData update) async {
-                    _landSearchController.updateSitePlanCoordinates(update);
-                  }, onDelete: (ProcessedLandData data) {  },);
+                  }
+
+                  _landSearchController.searchStatus.value =
+                      SearchStatus.success;
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+                onUpdate: (ProcessedLandData update) async {
+                  _landSearchController.updateSitePlanCoordinates(update);
+                },
+                onDelete: (ProcessedLandData data) {},
+              );
             });
       } else {
         _landSearchController.searchStatus.value = SearchStatus.error;
@@ -246,52 +262,59 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                                         onUpdate:
                                             (ProcessedLandData update) async {
                                           _landSearchController
-                                              .updateSitePlanCoordinates(update);
+                                              .updateSitePlanCoordinates(
+                                                  update);
                                         }),
                                   )),
                               Expanded(
                                 child: Stack(
                                   children: [
-                                    SearchablePlotTable(
-                                      plots: _landSearchController
-                                          .documentSearchResults,
-                                      updateSitePlan: _landSearchController
-                                          .updateSitePlanCoordinatesGeneral,
-                                      saveSitePlan: _landSearchController
-                                          .saveSitePlanGeneral,
-                                      deleteSitePlan: null,
-                                      getCameraPosition:
-                                          _landSearchController.getCenterPoints,
-                                      cameraPosition: _landSearchController
-                                          .initialCameraPosition3.value!,
-                                      hideSearchBar: true,
-                                      showEditButton: false,
-                                      mapView: CoordinatesMap(
-                                        coordinates: _landSearchController
-                                            .documentSearchResults
-                                            .map((sitePlan) => sitePlan
-                                                .pointList
-                                                .map((point) => latlong2.LatLng(
-                                                    point.latitude,
-                                                    point.longitude))
-                                                .toList())
-                                            .toList(),
-                                        initialZoom: 17.0,
-                                        borderRadius: 0,
-                                        mapHeight:
-                                            MediaQuery.of(context).size.height *
-                                                0.796,
-                                        onPolygonTap: (index) {
-                                          _landSearchController
-                                              .setSelectedSitePlan(
-                                                  _landSearchController
-                                                          .unApprovedSitePlans[
-                                                      index],
-                                                  refresh: false);
-                                        },
 
-                                      )
-                                    ),
+                                    if (_landSearchController.documentSearchResults.isEmpty)
+                                      const Center(child: Text("No matching site plans found!"),)
+                                    else if(_landSearchController.documentSearchResults.length == 1 && singleMatch == true)
+                                      const Center(child: Text("No matching site plans found, except itself!"),)
+                                    else
+                                       SearchablePlotTable(
+                                        plots: _landSearchController
+                                            .documentSearchResults,
+                                        updateSitePlan: _landSearchController
+                                            .updateSitePlanCoordinatesGeneral,
+                                        saveSitePlan: _landSearchController
+                                            .saveSitePlanGeneral,
+                                        deleteSitePlan: null,
+                                        getCameraPosition: _landSearchController
+                                            .getCenterPoints,
+                                        cameraPosition: _landSearchController
+                                            .initialCameraPosition3.value!,
+                                        hideSearchBar: true,
+                                        showEditButton: false,
+                                        mapView: CoordinatesMap(
+                                          coordinates: _landSearchController
+                                              .documentSearchResults
+                                              .map((sitePlan) => sitePlan
+                                                  .pointList
+                                                  .map((point) =>
+                                                      latlong2.LatLng(
+                                                          point.latitude,
+                                                          point.longitude))
+                                                  .toList())
+                                              .toList(),
+                                          initialZoom: 17.0,
+                                          borderRadius: 0,
+                                          mapHeight: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.796,
+                                          onPolygonTap: (index) {
+                                            _landSearchController
+                                                .setSelectedSitePlan(
+                                                    _landSearchController
+                                                            .unApprovedSitePlans[
+                                                        index],
+                                                    refresh: false);
+                                          },
+                                        )),
 
                                     // if (!isMapReady)
                                     //   const Center(
@@ -522,8 +545,10 @@ class _DocumentSearchDashboardState extends State<DocumentSearchDashboard> {
                                           onUpdate:
                                               (ProcessedLandData update) async {
                                             _landSearchController
-                                                .updateSitePlanCoordinates(update);
-                                          }, onDelete: null);
+                                                .updateSitePlanCoordinates(
+                                                    update);
+                                          },
+                                          onDelete: null);
                                     });
                               }
                             },

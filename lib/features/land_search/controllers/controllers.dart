@@ -188,7 +188,7 @@ class LandSearchController extends GetxController {
     }
   }
 
-  Future<void> documentSearch(ProcessedLandData searchDoc) async {
+  Future<List<ProcessedLandData>> documentSearch(ProcessedLandData searchDoc) async {
     try {
       searchStatus.value = SearchStatus.searching;
       final LandSearchParams params = LandSearchParams(
@@ -204,17 +204,22 @@ class LandSearchController extends GetxController {
       } else {
         searchStatus.value = SearchStatus.empty;
       }
+
+      return sitePlans;
     } catch (e, stackTrace) {
       searchStatus.value = SearchStatus.error;
       _handleError(e, stackTrace, 'Error loading site plans');
     }
+
+    return [];
   }
 
   Future<ProcessedLandData?> updateSitePlanCoordinatesGeneral(
       ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
-      final results = await _repository.updateSitePlanCoordinates('12344', data);
+      final results =
+          await _repository.updateSitePlanCoordinates('12344', data);
       final index = uploadedSitePlans.indexWhere((plan) => plan.id == data.id);
       searchResults[index] = results;
       uploadedSitePlans[index] = results;
@@ -227,10 +232,15 @@ class LandSearchController extends GetxController {
     return null;
   }
 
-  Future<ProcessedLandData?> updateSitePlanCoordinates(ProcessedLandData data) async {
+  Future<ProcessedLandData?> updateSitePlanCoordinates(
+      ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
-      final results = await _repository.updateSitePlanCoordinates('12344', data);
+      final results =
+          await _repository.updateSitePlanCoordinates('12344', data);
+      final update =
+          await _repository.updateSitePlanUnapproved(results.id!, results);
+
       final index =
           unApprovedSitePlans.indexWhere((plan) => plan.id == data.id);
       unApprovedSitePlans[index] = results;
@@ -249,7 +259,8 @@ class LandSearchController extends GetxController {
       ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
-      final results = await _repository.updateSitePlanCoordinates('12344', data);
+      final results =
+          await _repository.updateSitePlanCoordinates('12344', data);
       return results;
     } catch (error) {
       print(error);
@@ -311,11 +322,7 @@ class LandSearchController extends GetxController {
     }
   }
 
-
-
-
-  Future<ProcessedLandData?> updateSitePlan(
-      ProcessedLandData data) async {
+  Future<ProcessedLandData?> updateSitePlan(ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
       final results = await _repository.updateSitePlan(data.id!, data);
@@ -332,10 +339,7 @@ class LandSearchController extends GetxController {
     return null;
   }
 
-
-
-  Future<void> deleteSitePlan(
-      ProcessedLandData data) async {
+  Future<void> deleteSitePlan(ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
       await _repository.deleteSitePlan(data);
@@ -351,13 +355,12 @@ class LandSearchController extends GetxController {
     return null;
   }
 
-  Future<void> deleteUnapprovedSitePlan(
-      ProcessedLandData data) async {
+  Future<void> deleteUnapprovedSitePlan(ProcessedLandData data) async {
     try {
       updateStatus.value = LandSearchUpdateStatus.updating;
       await _repository.deleteUnapprovedSitePlan(data);
       final index =
-      unApprovedSitePlans.indexWhere((plan) => plan.id == data.id);
+          unApprovedSitePlans.indexWhere((plan) => plan.id == data.id);
       unApprovedSitePlans.removeAt(index);
       // setSelectedUnApprovedSitePlan(results, index: index);
       updateStatus.value = LandSearchUpdateStatus.updateComplete;

@@ -487,6 +487,46 @@ class _LandApiInterface implements LandApiInterface {
   }
 
   @override
+  Future<ApiResponse<ProcessedLandData>> updateSitePlanUnapproved({
+    required String landId,
+    required ProcessedLandData landData,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(landData.toJson());
+    final _options = _setStreamType<ApiResponse<ProcessedLandData>>(Options(
+      method: 'PUT',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+          _dio.options,
+          '/api/document-processing/update-siteplan-unapproved/${landId}',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiResponse<ProcessedLandData> _value;
+    try {
+      _value = ApiResponse<ProcessedLandData>.fromJson(
+        _result.data!,
+        (json) => ProcessedLandData.fromJson(json as Map<String, dynamic>),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<ApiResponse<ProcessedLandData>> updateSitePlan({
     required String landId,
     required ProcessedLandData landData,
