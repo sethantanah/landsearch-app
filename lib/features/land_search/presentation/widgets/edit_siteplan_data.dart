@@ -890,6 +890,7 @@ class _PlotFormState extends State<PlotForm>
       // Hide loading indicator
       if (mounted) {
         Navigator.pop(context);
+        Navigator.pop(context);
         Navigator.pop(parentContext);
       }
 
