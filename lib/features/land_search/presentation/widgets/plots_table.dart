@@ -167,7 +167,7 @@ class _SearchablePlotTableState extends State<SearchablePlotTable> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.0),
             spreadRadius: 2,
             blurRadius: 5,
             offset: const Offset(0, 3),
@@ -175,7 +175,7 @@ class _SearchablePlotTableState extends State<SearchablePlotTable> {
         ],
       ),
       margin: const EdgeInsets.all(16),
-      child: Expanded(
+      child: SingleChildScrollView(
         child: PaginatedDataTable(
           source: PlotDataSource(filteredPlots, context, _showPlotDetails),
           columns: [
@@ -253,7 +253,7 @@ class _SearchablePlotTableState extends State<SearchablePlotTable> {
             ),
           ],
 
-          // rowsPerPage: 10,
+          // rowsPerPage: 5,
           showEmptyRows: false,
           showCheckboxColumn: false,
           horizontalMargin: 24,
@@ -308,7 +308,8 @@ class _SearchablePlotTableState extends State<SearchablePlotTable> {
             ),
 
         // Enhanced Map Controls
-        Positioned(
+       if (mapView == null)
+         Positioned(
           right: 16,
           bottom: 16,
           child: Column(

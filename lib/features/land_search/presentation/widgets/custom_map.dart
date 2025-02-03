@@ -49,117 +49,119 @@ class _CoordinatesMapState extends State<CoordinatesMap> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          child: SizedBox(
-            height: widget.mapHeight,
-            child: Stack(
-              children: [
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    center: widget.coordinates.isNotEmpty &&
-                            widget.coordinates.first.isNotEmpty
-                        ? widget.coordinates.first.first
-                        : const LatLng(0, 0),
-                    zoom: widget.initialZoom,
-                    interactiveFlags: InteractiveFlag.all,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.app',
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            child: SizedBox(
+              height: widget.mapHeight,
+              child: Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      center: widget.coordinates.isNotEmpty &&
+                              widget.coordinates.first.isNotEmpty
+                          ? widget.coordinates.first.first
+                          : const LatLng(0, 0),
+                      zoom: widget.initialZoom,
+                      interactiveFlags: InteractiveFlag.all,
                     ),
-                    // Draw multiple polygons with tap detection
-                    PolygonLayer(
-                      polygons: widget.coordinates.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final points = entry.value;
-
-                        return Polygon(
-                          points: points,
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.3),
-                          borderColor: Theme.of(context).primaryColor,
-                          borderStrokeWidth: 3,
-                        );
-                      }).toList(),
-                    ),
-                    // Tap detection using a GestureDetector over the polygon
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTapUp: (details) {
-                        if (widget.onPolygonTap != null) {
-                          widget.onPolygonTap!(
-                              0); // You may need to determine index dynamically
-                        }
-                      },
-                    ),
-                    // Draw multiple polylines
-                    PolylineLayer(
-                      polylines: widget.coordinates.map((points) {
-                        return Polyline(
-                          points: [...points, points.first], // Close the loop
-                          strokeWidth: 3,
-                          color: Theme.of(context).primaryColor,
-                        );
-                      }).toList(),
-                    ),
-                    // Draw markers for polygon corners
-                    MarkerLayer(
-                      markers: widget.coordinates.expand((points) {
-                        return points.map((coord) => Marker(
-                              point: coord,
-                              width: 10,
-                              height: 10,
-                              builder: (context) => Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: Colors.white, width: 2),
-                                ),
-                              ),
-                            ));
-                      }).toList(),
-                    ),
-                  ],
-                ),
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: Column(
                     children: [
-                      buildMapControl(
-                        icon: Icons.add,
-                        onTap: () => _mapController.move(
-                            _mapController.center, _mapController.zoom + 1),
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.app',
                       ),
-                      const SizedBox(height: 8),
-                      buildMapControl(
-                        icon: Icons.remove,
-                        onTap: () => _mapController.move(
-                            _mapController.center, _mapController.zoom - 1),
+                      // Draw multiple polygons with tap detection
+                      PolygonLayer(
+                        polygons: widget.coordinates.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final points = entry.value;
+      
+                          return Polygon(
+                            points: points,
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.3),
+                            borderColor: Theme.of(context).primaryColor,
+                            borderStrokeWidth: 3,
+                          );
+                        }).toList(),
                       ),
-                      const SizedBox(height: 8),
-                      buildMapControl(
-                        icon: Icons.my_location,
-                        onTap: () => _mapController.move(
-                            LatLng(widget.coordinates.first.first.latitude,
-                                widget.coordinates.first.first.longitude),
-                            _mapController.zoom),
+                      // Tap detection using a GestureDetector over the polygon
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapUp: (details) {
+                          if (widget.onPolygonTap != null) {
+                            widget.onPolygonTap!(
+                                0); // You may need to determine index dynamically
+                          }
+                        },
+                      ),
+                      // Draw multiple polylines
+                      PolylineLayer(
+                        polylines: widget.coordinates.map((points) {
+                          return Polyline(
+                            points: [...points, points.first], // Close the loop
+                            strokeWidth: 3,
+                            color: Theme.of(context).primaryColor,
+                          );
+                        }).toList(),
+                      ),
+                      // Draw markers for polygon corners
+                      MarkerLayer(
+                        markers: widget.coordinates.expand((points) {
+                          return points.map((coord) => Marker(
+                                point: coord,
+                                width: 10,
+                                height: 10,
+                                builder: (context) => Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    border:
+                                        Border.all(color: Colors.white, width: 2),
+                                  ),
+                                ),
+                              ));
+                        }).toList(),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: Column(
+                      children: [
+                        buildMapControl(
+                          icon: Icons.add,
+                          onTap: () => _mapController.move(
+                              _mapController.center, _mapController.zoom + 1),
+                        ),
+                        const SizedBox(height: 8),
+                        buildMapControl(
+                          icon: Icons.remove,
+                          onTap: () => _mapController.move(
+                              _mapController.center, _mapController.zoom - 1),
+                        ),
+                        const SizedBox(height: 8),
+                        buildMapControl(
+                          icon: Icons.my_location,
+                          onTap: () => _mapController.move(
+                              LatLng(widget.coordinates.first.first.latitude,
+                                  widget.coordinates.first.first.longitude),
+                              _mapController.zoom),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        )
-      ],
+          )
+        ],
+      ),
     );
   }
 }
